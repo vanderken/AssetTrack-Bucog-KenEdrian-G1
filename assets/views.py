@@ -297,7 +297,11 @@ def active_checkouts(request):
         return redirect("accounts:company_manage")
 
     checkouts = Checkout.objects.filter(company=admin_company, status=Checkout.STATUS_ACTIVE).select_related("device", "employee")
-    return render(request, "assets/active_checkouts.html", {"checkouts": checkouts, "company": admin_company})
+    return render(request, "assets/active_checkouts.html", {
+        "checkouts": checkouts,
+        "company": admin_company,
+        "return_condition_choices": Checkout.CONDITION_CHOICES,
+    })
 
 
 @role_required(User.ROLE_ADMIN)
@@ -309,13 +313,26 @@ def checkout_return(request, pk):
 
     checkout = get_object_or_404(Checkout, pk=pk, company=admin_company, status=Checkout.STATUS_ACTIVE)
     if request.method == "POST":
+        condition = request.POST.get("return_condition", Checkout.CONDITION_GOOD)
+        condition_labels = dict(Checkout.CONDITION_CHOICES)
+        if condition not in condition_labels:
+            messages.error(request, "Please select a valid condition for the returned device.")
+            return redirect("assets:active_checkouts")
+
         checkout.status = Checkout.STATUS_RETURNED
         checkout.returned_at = timezone.now()
+        checkout.return_condition = condition
         checkout.save()
         if checkout.device:
-            checkout.device.status = Device.STATUS_AVAILABLE
+            needs_repair = condition in (Checkout.CONDITION_DAMAGED, Checkout.CONDITION_NEEDS_REPAIR)
+            checkout.device.status = Device.STATUS_REPAIR if needs_repair else Device.STATUS_AVAILABLE
             checkout.device.save()
-            messages.success(request, f"Device '{checkout.device.asset_tag}' marked as returned and is now available.")
+            status_note = "marked as Under Repair" if needs_repair else "now available"
+            messages.success(
+                request,
+                f"Device '{checkout.device.asset_tag}' returned in {condition_labels[condition].lower()} "
+                f"condition and is {status_note}.",
+            )
         else:
             messages.success(request, "Checkout marked as returned.")
 
