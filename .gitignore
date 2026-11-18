@@ -5,3 +5,5 @@ db.sqlite3
 media/
 staticfiles/
 venv/
+SETUP.md
+PLAN_COMMIT.md

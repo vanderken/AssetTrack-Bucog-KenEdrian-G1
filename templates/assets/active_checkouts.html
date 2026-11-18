@@ -19,7 +19,7 @@
           <th>Checked Out</th>
           <th>Due Date</th>
           <th>Status</th>
-          <th class="text-end">Action</th>
+          <th class="text-end">Action / Return Condition</th>
         </tr>
       </thead>
       <tbody>
@@ -36,9 +36,14 @@
               <span class="badge at-badge-borrowed"><i class="bi bi-check-circle me-1"></i>Active</span>
             {% endif %}
           </td>
-          <td class="text-end">
-            <form method="post" action="{% url 'assets:checkout_return' c.pk %}" class="d-inline">
+          <td>
+            <form method="post" action="{% url 'assets:checkout_return' c.pk %}" class="d-flex align-items-center gap-1">
               {% csrf_token %}
+              <select name="return_condition" class="form-select form-select-sm" aria-label="Condition on return" style="width:auto;">
+                {% for value, label in return_condition_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
               <button class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-return-left me-1"></i>Mark Returned</button>
             </form>
           </td>

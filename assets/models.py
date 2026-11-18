@@ -143,6 +143,17 @@ class Checkout(models.Model):
         (STATUS_REJECTED, "Rejected"),
     ]
 
+    CONDITION_GOOD = "good"
+    CONDITION_MINOR_WEAR = "minor_wear"
+    CONDITION_DAMAGED = "damaged"
+    CONDITION_NEEDS_REPAIR = "needs_repair"
+    CONDITION_CHOICES = [
+        (CONDITION_GOOD, "Good"),
+        (CONDITION_MINOR_WEAR, "Minor wear"),
+        (CONDITION_DAMAGED, "Damaged"),
+        (CONDITION_NEEDS_REPAIR, "Needs repair"),
+    ]
+
     company = models.ForeignKey(
         "accounts.Company",
         on_delete=models.CASCADE,
@@ -186,6 +197,13 @@ class Checkout(models.Model):
     checked_out_at = models.DateTimeField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     returned_at = models.DateTimeField(null=True, blank=True)
+    return_condition = models.CharField(
+        max_length=20,
+        choices=CONDITION_CHOICES,
+        default=CONDITION_GOOD,
+        blank=True,
+        verbose_name="Condition on Return",
+    )
     purpose = models.CharField(max_length=255, blank=True)
 
     class Meta:
