@@ -231,6 +231,12 @@ class MaintenanceLogForm(forms.ModelForm):
         self.fields["device"].empty_label = "-- Select Device --"
 
 
+class DepartmentForm(forms.ModelForm):
+    class Meta:
+        model = Department
+        fields = ["name"]
+
+
 class SystemSettingsForm(forms.ModelForm):
     class Meta:
         model = SystemSettings
@@ -250,5 +256,5 @@ def _apply_bootstrap_init(cls):
     return cls
 
 
-for _cls in [MaintenanceLogForm, SystemSettingsForm]:
+for _cls in [MaintenanceLogForm, DepartmentForm, SystemSettingsForm]:
     _apply_bootstrap_init(_cls)

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Delete Department - AssetTrack{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="mb-1 text-white fw-bold">Delete Department</h3>
+    <p class="text-secondary small mb-0">Members remain in the system and become unassigned.</p>
+  </div>
+  <a href="{% url 'assets:department_list' %}" class="btn btn-outline-light"><i class="bi bi-arrow-left me-1"></i> Back</a>
+</div>
+
+<div class="at-card p-4" style="max-width: 560px;">
+  <p class="text-light">Delete department <strong class="text-white">{{ department.name }}</strong>?</p>
+  <p class="text-secondary small">{{ member_count }} member(s) will be unassigned.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i> Delete</button>
+    <a href="{% url 'assets:department_list' %}" class="btn btn-outline-light">Cancel</a>
+  </form>
+</div>
+{% endblock %}

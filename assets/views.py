@@ -10,9 +10,9 @@ from accounts.decorators import role_required
 from accounts.models import User
 from .forms import (
     DeviceForm, CheckoutRequestForm,
-    CheckoutAssignForm, MaintenanceLogForm, SystemSettingsForm,
+    CheckoutAssignForm, MaintenanceLogForm, DepartmentForm, SystemSettingsForm,
 )
-from .models import Device, Category, Checkout, MaintenanceLog, SystemSettings
+from .models import Device, Category, Checkout, Department, MaintenanceLog, SystemSettings
 
 
 def get_admin_company(request):
@@ -178,8 +178,58 @@ def category_redirect(request):
 
 
 @role_required(User.ROLE_ADMIN)
-def department_redirect(request):
-    return redirect("assets:device_list")
+def department_list(request):
+    return render(request, "assets/department_list.html", {
+        "departments": Department.objects.all(),
+    })
+
+
+@role_required(User.ROLE_ADMIN)
+def department_create(request):
+    if request.method == "POST":
+        form = DepartmentForm(request.POST)
+        if form.is_valid():
+            department = form.save()
+            messages.success(request, f"Department '{department.name}' added.")
+            return redirect("assets:department_list")
+        messages.error(request, "Please fix the errors below.")
+    else:
+        form = DepartmentForm()
+    return render(request, "assets/department_form.html", {"form": form, "mode": "Add"})
+
+
+@role_required(User.ROLE_ADMIN)
+def department_edit(request, pk):
+    department = get_object_or_404(Department, pk=pk)
+    if request.method == "POST":
+        form = DepartmentForm(request.POST, instance=department)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Department '{department.name}' updated.")
+            return redirect("assets:department_list")
+        messages.error(request, "Please fix the errors below.")
+    else:
+        form = DepartmentForm(instance=department)
+    return render(request, "assets/department_form.html", {
+        "form": form, "mode": "Edit", "department": department,
+    })
+
+
+@role_required(User.ROLE_ADMIN)
+def department_delete(request, pk):
+    department = get_object_or_404(Department, pk=pk)
+    member_count = department.members.count()
+    if request.method == "POST":
+        name = department.name
+        department.delete()
+        messages.success(
+            request,
+            f"Department '{name}' removed. {member_count} member(s) are now unassigned.",
+        )
+        return redirect("assets:department_list")
+    return render(request, "assets/department_confirm_delete.html", {
+        "department": department, "member_count": member_count,
+    })
 
 
 @role_required(User.ROLE_ADMIN)

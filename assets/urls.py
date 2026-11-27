@@ -1,4 +1,3 @@
-from django.shortcuts import redirect
 from django.urls import path
 from . import views
 
@@ -9,7 +8,10 @@ urlpatterns = [
     path("devices/add/", views.device_create, name="device_create"),
     path("devices/<int:pk>/edit/", views.device_edit, name="device_edit"),
     path("devices/<int:pk>/delete/", views.device_delete, name="device_delete"),
-    path("departments/", lambda request: redirect("assets:device_list"), name="department_list"),
+    path("departments/", views.department_list, name="department_list"),
+    path("departments/add/", views.department_create, name="department_create"),
+    path("departments/<int:pk>/edit/", views.department_edit, name="department_edit"),
+    path("departments/<int:pk>/delete/", views.department_delete, name="department_delete"),
     path("categories/", views.category_redirect, name="category_list"),
     path("checkouts/requests/", views.checkout_requests, name="checkout_requests"),
     path("checkouts/requests/<int:pk>/approve/", views.checkout_approve, name="checkout_approve"),

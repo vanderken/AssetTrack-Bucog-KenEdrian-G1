@@ -50,6 +50,7 @@
       <a href="{% url 'assets:checkout_assign' %}" class="{% if request.resolver_match.url_name == 'checkout_assign' %}active{% endif %}"><i class="bi bi-person-plus me-2"></i>Assign Device</a>
       <a href="{% url 'assets:maintenance_list' %}" class="{% if request.resolver_match.url_name == 'maintenance_list' %}active{% endif %}"><i class="bi bi-tools me-2"></i>Maintenance</a>
       <a href="{% url 'accounts:company_manage' %}" class="{% if 'company' in request.resolver_match.url_name %}active{% endif %}"><i class="bi bi-building me-2"></i>Company</a>
+      <a href="{% url 'assets:department_list' %}" class="{% if 'department' in request.resolver_match.url_name %}active{% endif %}"><i class="bi bi-diagram-3 me-2"></i>Departments</a>
       <a href="{% url 'assets:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}"><i class="bi bi-bar-chart me-2"></i>Reports</a>
       <a href="{% url 'assets:system_settings' %}" class="{% if request.resolver_match.url_name == 'system_settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i>Settings</a>
     {% else %}
