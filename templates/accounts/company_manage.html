@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
           row.style.pointerEvents = "none";
         }
 
-        const url = `/accounts/company/remove-member/${pk}/`;
+        const url = "{% url 'accounts:company_remove_member' 0 %}".replace(/\b0\b/, pk);
         fetch(url, {
           method: "POST",
           headers: {
@@ -318,7 +318,7 @@ document.addEventListener("DOMContentLoaded", function () {
             row.style.opacity = "1";
             row.style.pointerEvents = "auto";
           }
-          showToast("Database rejected request. Action could not be completed.", "error");
+          showToast("The request could not be completed. Please try again.", "error");
         });
       });
     });
@@ -360,7 +360,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       })
       .catch(() => {
-        showToast("Code generated locally: " + previewCode + ". Click Save Company to persist.", "warning");
+        showToast("Could not generate a join code. Please try again.", "error");
       });
     });
   }
@@ -408,7 +408,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(() => {
         btnAddMember.disabled = false;
         btnAddMember.innerHTML = '<i class="bi bi-plus-lg me-1"></i>Add';
-        showToast("Database rejected request. Action could not be completed.", "error");
+        showToast("The request could not be completed. Please try again.", "error");
       });
     });
   }
@@ -425,7 +425,9 @@ document.addEventListener("DOMContentLoaded", function () {
         row.style.pointerEvents = "none";
       }
 
-      const url = "/accounts/company/request/" + pk + "/" + action + "/";
+      const url = "{% url 'accounts:company_request_review' 0 'accept' %}"
+        .replace(/\b0\b/, pk)
+        .replace("accept", action);
       fetch(url, {
         method: "POST",
         headers: {
@@ -465,7 +467,7 @@ document.addEventListener("DOMContentLoaded", function () {
           row.style.opacity = "1";
           row.style.pointerEvents = "auto";
         }
-        showToast("Database rejected request. Action could not be completed.", "error");
+        showToast("The request could not be completed. Please try again.", "error");
       });
     });
   });

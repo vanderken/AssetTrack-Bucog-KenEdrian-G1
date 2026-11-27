@@ -9,7 +9,6 @@ class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     first_name = forms.CharField(required=True, max_length=150)
     last_name = forms.CharField(required=True, max_length=150)
-    role = forms.ChoiceField(choices=User.ROLE_CHOICES)
     department = forms.ModelChoiceField(
         queryset=Department.objects.all(),
         required=False,
@@ -19,14 +18,14 @@ class RegistrationForm(UserCreationForm):
     class Meta:
         model = User
         fields = [
-            "username", "first_name", "last_name", "email", "role", "department",
+            "username", "first_name", "last_name", "email", "department",
             "password1", "password2",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, field in self.fields.items():
-            if name == "role":
+        for field in self.fields.values():
+            if isinstance(field, forms.ModelChoiceField):
                 field.widget.attrs["class"] = "form-select"
             else:
                 field.widget.attrs["class"] = "form-control"

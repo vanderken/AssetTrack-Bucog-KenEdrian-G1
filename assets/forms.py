@@ -236,14 +236,29 @@ class CheckoutReturnForm(forms.Form):
 
 
 class MaintenanceLogForm(forms.ModelForm):
+    MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
     class Meta:
         model = MaintenanceLog
         fields = ["device", "description", "image"]
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
 
+    def clean_description(self):
+        description = (self.cleaned_data.get("description") or "").strip()
+        if not description:
+            raise forms.ValidationError("Describe the fault or damage being reported.")
+        if len(description) < 5:
+            raise forms.ValidationError("Please provide a more detailed description.")
+        return description
+
+    def clean_image(self):
+        image = self.cleaned_data.get("image")
+        if image and image.size > self.MAX_IMAGE_BYTES:
+            raise forms.ValidationError("Photo must be 5 MB or smaller.")
+        return image
+
     def __init__(self, *args, company=None, **kwargs):
         super().__init__(*args, **kwargs)
-        _bootstrapify(self.fields)
         device_qs = Device.objects.all().select_related("category")
         if company:
             device_qs = device_qs.filter(company=company)

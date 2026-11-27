@@ -21,11 +21,18 @@ def get_admin_company(request):
     return request.user.company or request.user.administered_companies.first()
 
 
+def positive_int_or_none(value):
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
 def device_has_active_checkout(device):
-    """BR-14: a device may have at most one active checkout."""
-    if not device:
-        return False
-    return Checkout.objects.filter(device=device, status=Checkout.STATUS_ACTIVE).exists()
+    return Checkout.objects.filter(
+        device=device, status=Checkout.STATUS_ACTIVE
+    ).exists() if device else False
 
 
 @role_required(User.ROLE_ADMIN)
@@ -37,7 +44,9 @@ def device_list(request):
 
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
-    category_id = request.GET.get("category", "").strip()
+    if status not in dict(Device.STATUS_CHOICES):
+        status = ""
+    category_id = positive_int_or_none(request.GET.get("category"))
 
     active_checkouts_prefetch = Prefetch(
         "checkouts",
@@ -63,9 +72,10 @@ def device_list(request):
         "devices": devices,
         "query": query,
         "status": status,
-        "selected_category": category_id,
+        "selected_category": str(category_id) if category_id else "",
         "categories": categories,
         "status_choices": Device.STATUS_CHOICES,
+        "return_condition_choices": Checkout.CONDITION_CHOICES,
     }
     return render(request, "assets/device_list.html", context)
 
@@ -78,7 +88,9 @@ def device_create(request):
         return redirect("accounts:company_manage")
 
     settings_obj = SystemSettings.get_solo()
-    request_id = request.GET.get("request_id") or request.POST.get("request_id")
+    request_id = positive_int_or_none(
+        request.GET.get("request_id") or request.POST.get("request_id")
+    )
     fulfilling_request = None
     if request_id:
         fulfilling_request = Checkout.objects.filter(
@@ -97,15 +109,19 @@ def device_create(request):
             device.company = admin_company
             device.created_by = request.user
             if fulfilling_request:
-                device.status = Device.STATUS_BORROWED
-                device.save()
-                fulfilling_request.device = device
-                fulfilling_request.status = Checkout.STATUS_ACTIVE
-                fulfilling_request.approved_by = request.user
-                fulfilling_request.checked_out_at = timezone.now()
-                if not fulfilling_request.due_date:
-                    fulfilling_request.due_date = timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days)
-                fulfilling_request.save()
+                with transaction.atomic():
+                    device.status = Device.STATUS_BORROWED
+                    device.save()
+                    fulfilling_request.device = device
+                    fulfilling_request.status = Checkout.STATUS_ACTIVE
+                    fulfilling_request.approved_by = request.user
+                    fulfilling_request.checked_out_at = timezone.now()
+                    if not fulfilling_request.due_date:
+                        fulfilling_request.due_date = (
+                            timezone.localdate()
+                            + timezone.timedelta(days=settings_obj.overdue_days)
+                        )
+                    fulfilling_request.save()
                 emp_name = fulfilling_request.employee.get_full_name() or fulfilling_request.employee.username
                 messages.success(request, f"Device '{device.asset_tag}' created and assigned to {emp_name}.")
                 return redirect("assets:checkout_requests")
@@ -322,27 +338,28 @@ def checkout_approve(request, pk):
         return redirect(f"{reverse('assets:device_create')}?{urlencode(params)}")
 
     if request.method == "POST":
-        if checkout.device.status != Device.STATUS_AVAILABLE:
-            messages.error(
-                request,
-                f"Device '{checkout.device.asset_tag}' is no longer available (currently {checkout.device.get_status_display()})."
-            )
-            return redirect("assets:checkout_requests")
-        if device_has_active_checkout(checkout.device):
-            messages.error(
-                request,
-                f"Device '{checkout.device.asset_tag}' already has an active checkout and cannot be approved again."
-            )
-            return redirect("assets:checkout_requests")
         settings_obj = SystemSettings.get_solo()
         with transaction.atomic():
+            device = Device.objects.select_for_update().get(pk=checkout.device_id)
+            if device.status != Device.STATUS_AVAILABLE:
+                messages.error(
+                    request,
+                    f"Device '{device.asset_tag}' is no longer available "
+                    f"(currently {device.get_status_display()}).",
+                )
+                return redirect("assets:checkout_requests")
+            if device_has_active_checkout(device):
+                messages.error(
+                    request,
+                    f"Device '{device.asset_tag}' already has an active checkout and cannot be approved again.",
+                )
+                return redirect("assets:checkout_requests")
             checkout.status = Checkout.STATUS_ACTIVE
             checkout.approved_by = request.user
             checkout.checked_out_at = timezone.now()
             if not checkout.due_date:
                 checkout.due_date = timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days)
             checkout.save()
-            device = Device.objects.select_for_update().get(pk=checkout.device_id)
             device.status = Device.STATUS_BORROWED
             device.save(update_fields=["status"])
         borrower_name = checkout.employee.get_full_name() or checkout.employee.username
@@ -381,15 +398,19 @@ def checkout_assign(request):
     if request.method == "POST":
         form = CheckoutAssignForm(request.POST, company=admin_company)
         if form.is_valid():
-            device = form.cleaned_data["device"]
-            if device_has_active_checkout(device):
-                messages.error(
-                    request,
-                    f"Device '{device.asset_tag}' already has an active checkout and cannot be assigned again."
-                )
-                return redirect("assets:active_checkouts")
-            settings_obj = SystemSettings.get_solo()
             with transaction.atomic():
+                device = Device.objects.select_for_update().get(
+                    pk=form.cleaned_data["device"].pk
+                )
+                if device.status != Device.STATUS_AVAILABLE:
+                    messages.error(request, "That device is no longer available.")
+                    return redirect("assets:active_checkouts")
+                if device_has_active_checkout(device):
+                    messages.error(
+                        request,
+                        f"Device '{device.asset_tag}' already has an active checkout and cannot be assigned again.",
+                    )
+                    return redirect("assets:active_checkouts")
                 checkout = form.save(commit=False)
                 checkout.company = admin_company
                 checkout.created_by = request.user
@@ -399,9 +420,8 @@ def checkout_assign(request):
                 if not checkout.due_date:
                     checkout.due_date = timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days)
                 checkout.save()
-                locked_device = Device.objects.select_for_update().get(pk=device.pk)
-                locked_device.status = Device.STATUS_BORROWED
-                locked_device.save(update_fields=["status"])
+                device.status = Device.STATUS_BORROWED
+                device.save(update_fields=["status"])
             borrower_name = checkout.employee.get_full_name() or checkout.employee.username
             messages.success(request, f"Device '{checkout.device.asset_tag}' assigned to {borrower_name}.")
             return redirect("assets:active_checkouts")
@@ -410,7 +430,7 @@ def checkout_assign(request):
         initial = {
             "due_date": timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days),
         }
-        device_id = request.GET.get("device")
+        device_id = positive_int_or_none(request.GET.get("device"))
         if device_id:
             device_obj = Device.objects.filter(pk=device_id, company=admin_company, status=Device.STATUS_AVAILABLE).first()
             if device_obj:
@@ -516,20 +536,27 @@ def maintenance_list(request):
     if request.method == "POST":
         form = MaintenanceLogForm(request.POST, request.FILES, company=admin_company)
         if form.is_valid():
-            log = form.save(commit=False)
-            log.reported_by = request.user
-            log.save()
+            with transaction.atomic():
+                log = form.save(commit=False)
+                log.reported_by = request.user
+                log.save()
 
-            if log.device.status == Device.STATUS_BORROWED:
-                active_co = Checkout.objects.filter(device=log.device, status=Checkout.STATUS_ACTIVE).first()
-                if active_co:
-                    active_co.status = Checkout.STATUS_RETURNED
-                    active_co.returned_at = timezone.now()
-                    active_co.save()
+                if log.device.status == Device.STATUS_BORROWED:
+                    active_checkout = Checkout.objects.filter(
+                        device=log.device, status=Checkout.STATUS_ACTIVE
+                    ).first()
+                    if active_checkout:
+                        active_checkout.status = Checkout.STATUS_RETURNED
+                        active_checkout.returned_at = timezone.now()
+                        active_checkout.return_condition = Checkout.CONDITION_NEEDS_REPAIR
+                        active_checkout.save(
+                            update_fields=["status", "returned_at", "return_condition"]
+                        )
 
-            log.device.status = Device.STATUS_REPAIR
-            log.device.save()
-            messages.success(request, f"Maintenance log recorded. Device '{log.device.asset_tag}' marked as Under Repair.")
+                device = Device.objects.select_for_update().get(pk=log.device_id)
+                device.status = Device.STATUS_REPAIR
+                device.save(update_fields=["status"])
+            messages.success(request, f"Maintenance log recorded. Device '{device.asset_tag}' marked as Under Repair.")
             return redirect("assets:maintenance_list")
         messages.error(request, "Please fix the errors below.")
     else:
@@ -544,14 +571,25 @@ def maintenance_resolve(request, pk):
         messages.warning(request, "You must set up or be affiliated with a company.")
         return redirect("accounts:company_manage")
 
-    log = get_object_or_404(MaintenanceLog, pk=pk, device__company=admin_company)
+    log = get_object_or_404(
+        MaintenanceLog, pk=pk, device__company=admin_company, is_resolved=False
+    )
     if request.method == "POST":
-        log.is_resolved = True
-        log.resolved_at = timezone.now()
-        log.save()
-        log.device.status = Device.STATUS_AVAILABLE
-        log.device.save()
-        messages.success(request, f"Maintenance resolved. Device '{log.device.asset_tag}' returned to Available pool.")
+        with transaction.atomic():
+            log.is_resolved = True
+            log.resolved_at = timezone.now()
+            log.save(update_fields=["is_resolved", "resolved_at"])
+
+            device = Device.objects.select_for_update().get(pk=log.device_id)
+            if not MaintenanceLog.objects.filter(
+                device=device, is_resolved=False
+            ).exists():
+                device.status = Device.STATUS_AVAILABLE
+                device.save(update_fields=["status"])
+                status_note = "returned to Available pool"
+            else:
+                status_note = "kept Under Repair because other logs are still open"
+        messages.success(request, f"Maintenance resolved. Device '{log.device.asset_tag}' {status_note}.")
     return redirect("assets:maintenance_list")
 
 
@@ -579,6 +617,9 @@ def reports_view(request):
 
     active_checkouts_qs = Checkout.objects.filter(company=admin_company, status=Checkout.STATUS_ACTIVE).select_related("device", "employee")
     overdue_list = [c for c in active_checkouts_qs if c.is_overdue]
+    recently_returned = Checkout.objects.filter(
+        company=admin_company, status=Checkout.STATUS_RETURNED
+    ).select_related("device", "employee").order_by("-returned_at")[:10]
 
     context = {
         "company": admin_company,
@@ -588,8 +629,14 @@ def reports_view(request):
         "under_repair": sum(1 for d in devices if d.status == Device.STATUS_REPAIR),
         "active_checkouts": active_checkouts_qs.count(),
         "overdue": overdue_list,
+        "recently_returned": recently_returned,
         "return_condition_choices": Checkout.CONDITION_CHOICES,
-        "damaged": MaintenanceLog.objects.filter(device__company=admin_company, is_resolved=False).count(),
+        "open_maintenance": MaintenanceLog.objects.filter(
+            device__company=admin_company, is_resolved=False
+        ).count(),
+        "resolved_maintenance": MaintenanceLog.objects.filter(
+            device__company=admin_company, is_resolved=True
+        ).count(),
         "category_summary": category_summary,
         "devices": devices,
     }

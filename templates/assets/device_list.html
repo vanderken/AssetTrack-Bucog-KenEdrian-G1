@@ -91,9 +91,15 @@
                 <i class="bi bi-person-plus me-1"></i>Assign
               </a>
             {% elif d.status == "borrowed" and d.current_checkout %}
-              <form method="post" action="{% url 'assets:checkout_return' d.current_checkout.pk %}" class="d-inline">
+              <form method="post" action="{% url 'assets:checkout_return' d.current_checkout.pk %}" class="d-flex align-items-center gap-1 d-inline-flex">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="device_list">
+                <select name="return_condition" class="form-select form-select-sm" aria-label="Condition on return" required style="width:auto;">
+                  <option value="" disabled selected>-- Condition --</option>
+                  {% for value, label in return_condition_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
                 <button type="submit" class="btn btn-sm btn-outline-success me-1" title="Mark Returned">
                   <i class="bi bi-arrow-return-left me-1"></i>Check In
                 </button>

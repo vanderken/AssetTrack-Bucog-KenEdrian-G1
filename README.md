@@ -14,21 +14,29 @@ Users are split into two roles:
 
 ## Intended Features
 
-The full system is intended to provide the following features. The first three
-are the working Project Development 2 increment; the rest are planned for later
-increments.
+The table maps the SDD feature IDs to the implemented feature branches. All
+nine SDD features are now implemented in the application.
 
-| # | Feature | Status |
+| SDD ID | Feature | Status |
 | --- | --- | --- |
-| 1 | Equipment and category inventory (Create / Read / Update / Delete) | Working |
-| 2 | Borrowing transaction (request, staff approval, direct assignment) | Working |
-| 3 | Return recording with actual return date and equipment condition | Working |
-| 4 | Maintenance logging and resolution workflow | Planned |
-| 5 | Usage / overdue reports dashboard | Planned |
-| 6 | Company membership join and leave requests | Working |
-| 7 | Admin-configurable self-checkout and overdue settings | Planned |
+| F-01 | Accounts, roles, profiles and departments | Working |
+| F-02 | Company records and join-code membership | Working |
+| F-03 | Equipment and category inventory (Create / Read / Update / Delete) | Working |
+| F-04 | Borrowing request and approval queue | Working |
+| F-05 | Approval, rejection and direct assignment | Working |
+| F-06 | Return recording with condition and due date | Working |
+| F-07 | Maintenance logging and resolution workflow | Working |
+| F-08 | Usage, overdue and recently-returned reports | Working |
+| F-09 | Admin-configurable self-checkout and overdue settings | Working |
 
-Accounts, roles, profiles and optional department management are implemented; departments are managed by IT Admins under **Departments** and can be assigned during registration, profile editing, or company member setup. Categories are managed under **Categories** with add, edit and protected deletion. Borrowing requests require an available company device or a new-model name, and record the purpose and request timestamp. Approval and direct assignment are transactional and reject any device that already has an active checkout. Returns require an explicit condition on both the active-loan and overdue-report screens, and the database rejects a returned checkout with a blank condition.
+The SDD's section 1.7 describes the earlier PD2 increment; the F-01–F-09 feature
+branches listed above supersede that wording. System settings is stored as a
+single row with `id = 1`. Its overdue threshold sets the default loan due date,
+and overdue reports flag active loans once that due date has passed. Django
+admin records are company-scoped, while the dedicated **System Settings** page
+is the supported configuration screen.
+
+Accounts, roles, profiles and optional department management are implemented; departments are managed by IT Admins under **Departments** and can be assigned during registration, profile editing, or company member setup. Categories are managed under **Categories** with add, edit and protected deletion. Borrowing requests require an available company device or a new-model name, and record the purpose and request timestamp. Approval and direct assignment are transactional and reject any device that already has an active checkout. Returns require an explicit condition on both the active-loan and overdue-report screens, and the database rejects a returned checkout with a blank condition. Maintenance logs require a description, accept an optional photo up to 5 MB, and a device returns to service only after every open log is resolved.
 
 ## Core Feature — Equipment Borrowing Lifecycle (Vertical Slice)
 

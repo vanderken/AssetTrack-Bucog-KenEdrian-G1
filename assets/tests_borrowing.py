@@ -1,4 +1,4 @@
-"""Feature 2 verification: borrowing transaction (employee request -> staff release)."""
+"""Borrowing request and fulfillment workflow tests."""
 
 from django.test import Client, TestCase
 from django.urls import reverse
