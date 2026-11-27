@@ -225,6 +225,15 @@ class Checkout(models.Model):
                 condition=Q(status__in=["pending", "active", "returned", "rejected"]),
                 name="checkout_status_valid",
             ),
+            models.CheckConstraint(
+                condition=(
+                    Q(status__in=["pending", "active", "rejected"])
+                    | Q(return_condition__in=[
+                        "good", "minor_wear", "damaged", "needs_repair",
+                    ])
+                ),
+                name="returned_checkout_condition_valid",
+            ),
         ]
 
     @property
