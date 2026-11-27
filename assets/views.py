@@ -516,20 +516,27 @@ def maintenance_list(request):
     if request.method == "POST":
         form = MaintenanceLogForm(request.POST, request.FILES, company=admin_company)
         if form.is_valid():
-            log = form.save(commit=False)
-            log.reported_by = request.user
-            log.save()
+            with transaction.atomic():
+                log = form.save(commit=False)
+                log.reported_by = request.user
+                log.save()
 
-            if log.device.status == Device.STATUS_BORROWED:
-                active_co = Checkout.objects.filter(device=log.device, status=Checkout.STATUS_ACTIVE).first()
-                if active_co:
-                    active_co.status = Checkout.STATUS_RETURNED
-                    active_co.returned_at = timezone.now()
-                    active_co.save()
+                if log.device.status == Device.STATUS_BORROWED:
+                    active_checkout = Checkout.objects.filter(
+                        device=log.device, status=Checkout.STATUS_ACTIVE
+                    ).first()
+                    if active_checkout:
+                        active_checkout.status = Checkout.STATUS_RETURNED
+                        active_checkout.returned_at = timezone.now()
+                        active_checkout.return_condition = Checkout.CONDITION_NEEDS_REPAIR
+                        active_checkout.save(
+                            update_fields=["status", "returned_at", "return_condition"]
+                        )
 
-            log.device.status = Device.STATUS_REPAIR
-            log.device.save()
-            messages.success(request, f"Maintenance log recorded. Device '{log.device.asset_tag}' marked as Under Repair.")
+                device = Device.objects.select_for_update().get(pk=log.device_id)
+                device.status = Device.STATUS_REPAIR
+                device.save(update_fields=["status"])
+            messages.success(request, f"Maintenance log recorded. Device '{device.asset_tag}' marked as Under Repair.")
             return redirect("assets:maintenance_list")
         messages.error(request, "Please fix the errors below.")
     else:
@@ -544,14 +551,25 @@ def maintenance_resolve(request, pk):
         messages.warning(request, "You must set up or be affiliated with a company.")
         return redirect("accounts:company_manage")
 
-    log = get_object_or_404(MaintenanceLog, pk=pk, device__company=admin_company)
+    log = get_object_or_404(
+        MaintenanceLog, pk=pk, device__company=admin_company, is_resolved=False
+    )
     if request.method == "POST":
-        log.is_resolved = True
-        log.resolved_at = timezone.now()
-        log.save()
-        log.device.status = Device.STATUS_AVAILABLE
-        log.device.save()
-        messages.success(request, f"Maintenance resolved. Device '{log.device.asset_tag}' returned to Available pool.")
+        with transaction.atomic():
+            log.is_resolved = True
+            log.resolved_at = timezone.now()
+            log.save(update_fields=["is_resolved", "resolved_at"])
+
+            device = Device.objects.select_for_update().get(pk=log.device_id)
+            if not MaintenanceLog.objects.filter(
+                device=device, is_resolved=False
+            ).exists():
+                device.status = Device.STATUS_AVAILABLE
+                device.save(update_fields=["status"])
+                status_note = "returned to Available pool"
+            else:
+                status_note = "kept Under Repair because other logs are still open"
+        messages.success(request, f"Maintenance resolved. Device '{log.device.asset_tag}' {status_note}.")
     return redirect("assets:maintenance_list")
 
 
