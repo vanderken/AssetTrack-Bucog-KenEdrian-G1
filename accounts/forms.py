@@ -76,6 +76,17 @@ class CompanyForm(forms.ModelForm):
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
 
+    def clean_code(self):
+        code = (self.cleaned_data.get("code") or "").strip().upper()
+        if not code:
+            raise ValidationError("A company join code is required.")
+        queryset = Company.objects.filter(code__iexact=code)
+        if self.instance and self.instance.pk:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise ValidationError("That join code is already in use. Choose a different one.")
+        return code
+
 
 class CompanyJoinForm(forms.Form):
     company_code = forms.CharField(

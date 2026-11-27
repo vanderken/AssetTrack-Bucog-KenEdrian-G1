@@ -402,8 +402,11 @@ def employee_join_company(request):
                 if request.headers.get("x-requested-with") == "XMLHttpRequest":
                     return JsonResponse({"success": False, "message": err_msg}, status=400)
                 messages.error(request, err_msg)
-            elif pending_join and pending_join.company == target_company:
-                warn_msg = f"You already have a pending join request for {target_company.name}."
+            elif pending_join:
+                warn_msg = (
+                    f"You already have a pending join request for {pending_join.company.name}. "
+                    "Wait for it to be decided before requesting another company."
+                )
                 if request.headers.get("x-requested-with") == "XMLHttpRequest":
                     return JsonResponse({"success": False, "message": warn_msg}, status=400)
                 messages.warning(request, warn_msg)
