@@ -214,6 +214,15 @@ class CheckoutAssignForm(forms.ModelForm):
             f"{user.get_full_name()} (@{user.username})" if user.get_full_name() else f"@{user.username}"
         )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        device = cleaned_data.get("device")
+        if device and Checkout.objects.filter(
+            device=device, status=Checkout.STATUS_ACTIVE
+        ).exists():
+            self.add_error("device", "That device already has an active checkout.")
+        return cleaned_data
+
     def clean_due_date(self):
         due_date = self.cleaned_data.get("due_date")
         if due_date and due_date < timezone.localdate():
