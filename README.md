@@ -29,6 +29,13 @@ nine SDD features are now implemented in the application.
 | F-08 | Usage, overdue and recently-returned reports | Working |
 | F-09 | Admin-configurable self-checkout and overdue settings | Working |
 
+The SDD's section 1.7 describes the earlier PD2 increment; the F-01–F-09 feature
+branches listed above supersede that wording. System settings is stored as a
+single row with `id = 1`. Its overdue threshold sets the default loan due date,
+and overdue reports flag active loans once that due date has passed. Django
+admin records are company-scoped, while the dedicated **System Settings** page
+is the supported configuration screen.
+
 Accounts, roles, profiles and optional department management are implemented; departments are managed by IT Admins under **Departments** and can be assigned during registration, profile editing, or company member setup. Categories are managed under **Categories** with add, edit and protected deletion. Borrowing requests require an available company device or a new-model name, and record the purpose and request timestamp. Approval and direct assignment are transactional and reject any device that already has an active checkout. Returns require an explicit condition on both the active-loan and overdue-report screens, and the database rejects a returned checkout with a blank condition. Maintenance logs require a description, accept an optional photo up to 5 MB, and a device returns to service only after every open log is resolved.
 
 ## Core Feature — Equipment Borrowing Lifecycle (Vertical Slice)
