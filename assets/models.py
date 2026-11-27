@@ -1,7 +1,9 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Value
 from django.utils import timezone
+from django.core.validators import MinValueValidator
 
 
 class Department(models.Model):
@@ -28,7 +30,11 @@ class Category(models.Model):
 
 class SystemSettings(models.Model):
     self_checkout_allowed = models.BooleanField(default=False)
-    overdue_days = models.PositiveIntegerField(default=7)
+    overdue_days = models.PositiveIntegerField(
+        default=7,
+        validators=[MinValueValidator(1)],
+        help_text="Default loan length used to set due dates; reports flag active loans after that date.",
+    )
 
     field_purchase_date_enabled = models.BooleanField(default=True)
     field_brand_enabled = models.BooleanField(default=True)
@@ -38,11 +44,30 @@ class SystemSettings(models.Model):
 
     class Meta:
         verbose_name_plural = "System Settings"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(pk=1), name="system_settings_singleton_id"
+            ),
+            models.UniqueConstraint(
+                Value(1), name="system_settings_single_row"
+            ),
+            models.CheckConstraint(
+                condition=Q(overdue_days__gte=1),
+                name="system_settings_overdue_days_positive",
+            ),
+        ]
 
     @classmethod
     def get_solo(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            self.pk = 1
+        elif self.pk != 1:
+            raise ValidationError("System settings is a singleton row with id = 1.")
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return "System Settings"
@@ -224,6 +249,13 @@ class Checkout(models.Model):
                 name="return_condition_valid",
             ),
         ]
+
+    def clean(self):
+        super().clean()
+        if self.due_date and self.due_date < timezone.localdate():
+            raise ValidationError({
+                "due_date": "Due date must be today or in the future."
+            })
 
     @property
     def is_overdue(self):

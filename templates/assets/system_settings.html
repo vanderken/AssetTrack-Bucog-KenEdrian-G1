@@ -11,6 +11,7 @@
 <div class="at-card p-4" style="max-width:640px;">
   <form method="post">
     {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>{% endif %}
     <h5 class="text-white fw-bold mb-3"><i class="bi bi-sliders text-primary me-2"></i>General Policies</h5>
     <div class="form-check form-switch mb-3">
       {{ form.self_checkout_allowed }}
@@ -19,9 +20,10 @@
     </div>
     
     <div class="mb-4">
-      <label class="form-label text-light fw-semibold">Overdue threshold (days)</label>
+      <label class="form-label text-light fw-semibold" for="{{ form.overdue_days.id_for_label }}">Overdue threshold (days)</label>
       {{ form.overdue_days }}
-      <div class="form-text text-secondary small">Number of days before an active loan is flagged as overdue.</div>
+      {% if form.overdue_days.errors %}<div class="text-danger small mt-1">{{ form.overdue_days.errors.0 }}</div>{% endif %}
+      <div class="form-text text-secondary small">{{ form.overdue_days.help_text }}</div>
     </div>
 
     <hr class="border-secondary my-4">
