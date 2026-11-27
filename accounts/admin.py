@@ -1,5 +1,8 @@
 from django.contrib import admin
+from django.contrib.admin import register
 from django.contrib.auth.admin import UserAdmin
+
+from assettrack.admin_site import assettrack_admin
 
 from assets.models import Department
 
@@ -33,7 +36,7 @@ class CompanyScopedAdminMixin:
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-@admin.register(User)
+@register(User, site=assettrack_admin)
 class AssetTrackUserAdmin(CompanyScopedAdminMixin, UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ("Role & Company", {"fields": ("role", "company", "department", "contact_number", "profile_photo")}),
@@ -42,19 +45,19 @@ class AssetTrackUserAdmin(CompanyScopedAdminMixin, UserAdmin):
     list_filter = ("role", "company", "is_active")
 
 
-@admin.register(Company)
+@register(Company, site=assettrack_admin)
 class CompanyAdmin(CompanyScopedAdminMixin, admin.ModelAdmin):
     company_filter = "pk"
     list_display = ("name", "code", "admin", "created_at")
 
 
-@admin.register(CompanyMembershipRequest)
+@register(CompanyMembershipRequest, site=assettrack_admin)
 class CompanyMembershipRequestAdmin(CompanyScopedAdminMixin, admin.ModelAdmin):
     company_filter = "company"
     list_display = ("user", "company", "request_type", "status", "created_at")
     list_filter = ("request_type", "status")
 
 
-@admin.register(Department)
+@register(Department, site=assettrack_admin)
 class DepartmentAdmin(admin.ModelAdmin):
     list_display = ("name",)

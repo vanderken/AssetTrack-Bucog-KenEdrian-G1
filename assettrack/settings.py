@@ -78,14 +78,20 @@ if "test" in sys.argv:
     }
 
 # Django 5.1's BaseContext.__copy__ calls super().__copy__(), which fails on
-# Python 3.14 because the base object has no __dict__. The test client copies
-# every rendered context, so every page render needs this compatibility shim.
+# Python 3.14 because the base object has no __dict__. The test client and admin
+# template tags copy rendered contexts, so preserve all context metadata as well
+# as the dictionary stack.
 from django.template import context as _dj_context
 
-_dj_context.BaseContext.__copy__ = lambda self: (
-    setattr(copy := object.__new__(self.__class__), "dicts", self.dicts[:]),
-    copy,
-)[1]
+
+def _safe_base_context_copy(self):
+    duplicate = object.__new__(self.__class__)
+    duplicate.__dict__.update(self.__dict__)
+    duplicate.dicts = self.dicts[:]
+    return duplicate
+
+
+_dj_context.BaseContext.__copy__ = _safe_base_context_copy
 
 AUTH_USER_MODEL = "accounts.User"
 

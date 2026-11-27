@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django.contrib.admin import register
+
+from assettrack.admin_site import assettrack_admin
 
 from accounts.models import Company, User
 
@@ -38,31 +41,31 @@ class CompanyScopedAdmin(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-@admin.register(Device)
+@register(Device, site=assettrack_admin)
 class DeviceAdmin(CompanyScopedAdmin):
     list_display = ("asset_tag", "model_name", "company", "status")
     list_filter = ("status", "company")
 
 
-@admin.register(Category)
+@register(Category, site=assettrack_admin)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "is_custom")
 
 
-@admin.register(Checkout)
+@register(Checkout, site=assettrack_admin)
 class CheckoutAdmin(CompanyScopedAdmin):
     list_display = ("device", "employee", "status", "due_date", "company")
     list_filter = ("status", "company")
 
 
-@admin.register(MaintenanceLog)
+@register(MaintenanceLog, site=assettrack_admin)
 class MaintenanceLogAdmin(CompanyScopedAdmin):
     company_filter = "device__company"
     list_display = ("device", "reported_by", "is_resolved", "reported_at")
     list_filter = ("is_resolved",)
 
 
-@admin.register(SystemSettings)
+@register(SystemSettings, site=assettrack_admin)
 class SystemSettingsAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).filter(pk=1)
