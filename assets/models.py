@@ -220,6 +220,12 @@ class Checkout(models.Model):
             models.Index(fields=["employee", "status"]),
             models.Index(fields=["company"]),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(status__in=["pending", "active", "returned", "rejected"]),
+                name="checkout_status_valid",
+            ),
+        ]
 
     @property
     def is_overdue(self):

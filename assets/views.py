@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -17,6 +18,13 @@ from .models import Device, Category, Checkout, Department, MaintenanceLog, Syst
 
 def get_admin_company(request):
     return request.user.company or request.user.administered_companies.first()
+
+
+def device_has_active_checkout(device):
+    """BR-14: a device may have at most one active checkout."""
+    if not device:
+        return False
+    return Checkout.objects.filter(device=device, status=Checkout.STATUS_ACTIVE).exists()
 
 
 @role_required(User.ROLE_ADMIN)
@@ -319,15 +327,23 @@ def checkout_approve(request, pk):
                 f"Device '{checkout.device.asset_tag}' is no longer available (currently {checkout.device.get_status_display()})."
             )
             return redirect("assets:checkout_requests")
+        if device_has_active_checkout(checkout.device):
+            messages.error(
+                request,
+                f"Device '{checkout.device.asset_tag}' already has an active checkout and cannot be approved again."
+            )
+            return redirect("assets:checkout_requests")
         settings_obj = SystemSettings.get_solo()
-        checkout.status = Checkout.STATUS_ACTIVE
-        checkout.approved_by = request.user
-        checkout.checked_out_at = timezone.now()
-        if not checkout.due_date:
-            checkout.due_date = timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days)
-        checkout.save()
-        checkout.device.status = Device.STATUS_BORROWED
-        checkout.device.save()
+        with transaction.atomic():
+            checkout.status = Checkout.STATUS_ACTIVE
+            checkout.approved_by = request.user
+            checkout.checked_out_at = timezone.now()
+            if not checkout.due_date:
+                checkout.due_date = timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days)
+            checkout.save()
+            device = Device.objects.select_for_update().get(pk=checkout.device_id)
+            device.status = Device.STATUS_BORROWED
+            device.save(update_fields=["status"])
         borrower_name = checkout.employee.get_full_name() or checkout.employee.username
         messages.success(request, f"Checkout approved for {borrower_name}.")
     return redirect("assets:checkout_requests")
@@ -364,17 +380,27 @@ def checkout_assign(request):
     if request.method == "POST":
         form = CheckoutAssignForm(request.POST, company=admin_company)
         if form.is_valid():
-            checkout = form.save(commit=False)
-            checkout.company = admin_company
-            checkout.created_by = request.user
-            checkout.status = Checkout.STATUS_ACTIVE
-            checkout.approved_by = request.user
-            checkout.checked_out_at = timezone.now()
-            if not checkout.due_date:
-                checkout.due_date = timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days)
-            checkout.save()
-            checkout.device.status = Device.STATUS_BORROWED
-            checkout.device.save()
+            device = form.cleaned_data["device"]
+            if device_has_active_checkout(device):
+                messages.error(
+                    request,
+                    f"Device '{device.asset_tag}' already has an active checkout and cannot be assigned again."
+                )
+                return redirect("assets:active_checkouts")
+            settings_obj = SystemSettings.get_solo()
+            with transaction.atomic():
+                checkout = form.save(commit=False)
+                checkout.company = admin_company
+                checkout.created_by = request.user
+                checkout.status = Checkout.STATUS_ACTIVE
+                checkout.approved_by = request.user
+                checkout.checked_out_at = timezone.now()
+                if not checkout.due_date:
+                    checkout.due_date = timezone.localdate() + timezone.timedelta(days=settings_obj.overdue_days)
+                checkout.save()
+                locked_device = Device.objects.select_for_update().get(pk=device.pk)
+                locked_device.status = Device.STATUS_BORROWED
+                locked_device.save(update_fields=["status"])
             borrower_name = checkout.employee.get_full_name() or checkout.employee.username
             messages.success(request, f"Device '{checkout.device.asset_tag}' assigned to {borrower_name}.")
             return redirect("assets:active_checkouts")
