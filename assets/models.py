@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -109,6 +110,12 @@ class Device(models.Model):
             models.Index(fields=["status"]),
             models.Index(fields=["category"]),
             models.Index(fields=["company"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(status__in=["available", "borrowed", "repair"]),
+                name="device_status_valid",
+            ),
         ]
 
     def __str__(self):
