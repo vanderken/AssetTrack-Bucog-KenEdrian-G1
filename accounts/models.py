@@ -1,6 +1,7 @@
 import secrets
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
 
 
 def generate_company_code():
@@ -55,6 +56,14 @@ class User(AbstractUser):
     )
     profile_photo = models.ImageField(upload_to="profile_photos/", null=True, blank=True)
 
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(role__in=["admin", "employee"]),
+                name="user_role_valid",
+            ),
+        ]
+
     @property
     def is_admin_role(self):
         return self.role == self.ROLE_ADMIN
@@ -100,6 +109,16 @@ class CompanyMembershipRequest(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(request_type__in=["join", "leave"]),
+                name="membership_request_type_valid",
+            ),
+            models.CheckConstraint(
+                condition=Q(status__in=["pending", "approved", "rejected"]),
+                name="membership_request_status_valid",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.request_type} - {self.status}"

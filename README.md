@@ -25,8 +25,10 @@ increments.
 | 3 | Return recording with actual return date and equipment condition | Working |
 | 4 | Maintenance logging and resolution workflow | Planned |
 | 5 | Usage / overdue reports dashboard | Planned |
-| 6 | Company membership join and leave requests | Planned |
+| 6 | Company membership join and leave requests | Working |
 | 7 | Admin-configurable self-checkout and overdue settings | Planned |
+
+Accounts, roles, profiles and optional department management are implemented; departments are managed by IT Admins under **Departments** and can be assigned during registration, profile editing, or company member setup. Categories are managed under **Categories** with add, edit and protected deletion.
 
 ## Core Feature — Equipment Borrowing Lifecycle (Vertical Slice)
 
@@ -83,6 +85,7 @@ end through every layer of the system:
 - Role-based dashboards (`/accounts/dashboard/admin/`,
   `/accounts/dashboard/employee/`)
 - User profile view and edit (`/accounts/profile/`, `/accounts/profile/edit/`)
+- Department management and assignment (`/assets/departments/`)
 
 ## Tech Stack
 

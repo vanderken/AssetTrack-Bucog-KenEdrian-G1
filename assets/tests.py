@@ -242,14 +242,16 @@ class RequestForNewDeviceFlowTests(CompanyScopingBase):
         self.assertNotIn(self.req.pk, pending_ids)
 
 
-class DepartmentAndCategoryUrlRemovalTests(CompanyScopingBase):
-    def test_categories_url_redirects_to_device_create(self):
+class DepartmentAndCategoryUrlTests(CompanyScopingBase):
+    def test_categories_url_lists_categories(self):
         response = self.login(self.admin_a).get("/assets/categories/")
-        self.assertRedirects(response, reverse("assets:device_create"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Categories")
 
-    def test_departments_url_redirects_to_device_list(self):
+    def test_departments_url_lists_departments(self):
         response = self.login(self.admin_a).get("/assets/departments/")
-        self.assertRedirects(response, reverse("assets:device_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Departments")
 
 
 class CoreFeatureOwnershipAndValidationTests(CompanyScopingBase):
