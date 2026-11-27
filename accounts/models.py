@@ -1,6 +1,7 @@
 import secrets
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
 
 
 def generate_company_code():
@@ -54,6 +55,14 @@ class User(AbstractUser):
         "assets.Department", on_delete=models.SET_NULL, null=True, blank=True, related_name="members"
     )
     profile_photo = models.ImageField(upload_to="profile_photos/", null=True, blank=True)
+
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(role__in=["admin", "employee"]),
+                name="user_role_valid",
+            ),
+        ]
 
     @property
     def is_admin_role(self):

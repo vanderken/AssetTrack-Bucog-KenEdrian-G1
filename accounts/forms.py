@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
+from assets.models import Department
 from .models import User, Company
 
 
@@ -9,10 +10,18 @@ class RegistrationForm(UserCreationForm):
     first_name = forms.CharField(required=True, max_length=150)
     last_name = forms.CharField(required=True, max_length=150)
     role = forms.ChoiceField(choices=User.ROLE_CHOICES)
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.all(),
+        required=False,
+        empty_label="-- No department --",
+    )
 
     class Meta:
         model = User
-        fields = ["username", "first_name", "last_name", "email", "role", "password1", "password2"]
+        fields = [
+            "username", "first_name", "last_name", "email", "role", "department",
+            "password1", "password2",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,7 +47,7 @@ class RegistrationForm(UserCreationForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "contact_number", "profile_photo"]
+        fields = ["first_name", "last_name", "email", "contact_number", "department", "profile_photo"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

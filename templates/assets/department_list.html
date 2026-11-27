@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Departments - AssetTrack{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="mb-1 text-white fw-bold">Departments</h3>
+    <p class="text-secondary small mb-0">Optional organisational units used to group users.</p>
+  </div>
+  <a href="{% url 'assets:department_create' %}" class="btn btn-at-primary"><i class="bi bi-plus-lg me-1"></i> Add Department</a>
+</div>
+
+<div class="at-card p-3">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Members</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for department in departments %}
+        <tr>
+          <td class="text-white fw-medium">{{ department.name }}</td>
+          <td class="text-secondary">{{ department.members.count }}</td>
+          <td class="text-end">
+            <a href="{% url 'assets:department_edit' department.pk %}" class="btn btn-sm btn-outline-light"><i class="bi bi-pencil me-1"></i>Edit</a>
+            <a href="{% url 'assets:department_delete' department.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="3" class="text-center py-4 text-secondary">No departments recorded.</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
