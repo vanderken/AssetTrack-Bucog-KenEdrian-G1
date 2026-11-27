@@ -15,23 +15,6 @@ class Department(models.Model):
 
 
 class Category(models.Model):
-    FIXED_LAPTOP = "laptop"
-    FIXED_DESKTOP = "desktop"
-    FIXED_MONITOR = "monitor"
-    FIXED_PHONE = "cellphone"
-    FIXED_CHARGER = "charger"
-    FIXED_PERIPHERAL = "peripheral"
-    FIXED_OTHER = "other"
-    FIXED_CHOICES = [
-        (FIXED_LAPTOP, "Laptop"),
-        (FIXED_DESKTOP, "Desktop"),
-        (FIXED_MONITOR, "Monitor"),
-        (FIXED_PHONE, "Cell Phone"),
-        (FIXED_CHARGER, "Charger"),
-        (FIXED_PERIPHERAL, "Peripheral"),
-        (FIXED_OTHER, "Other / Custom"),
-    ]
-
     name = models.CharField(max_length=100, unique=True)
     is_custom = models.BooleanField(default=False)
 
@@ -233,6 +216,12 @@ class Checkout(models.Model):
                     ])
                 ),
                 name="returned_checkout_condition_valid",
+            ),
+            models.CheckConstraint(
+                condition=Q(return_condition__in=[
+                    "good", "minor_wear", "damaged", "needs_repair",
+                ]),
+                name="return_condition_valid",
             ),
         ]
 

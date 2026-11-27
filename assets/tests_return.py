@@ -1,4 +1,4 @@
-"""Feature 3 verification: return recording with condition and maintenance handling."""
+"""Return recording and maintenance handling tests."""
 
 from django.test import Client, TestCase
 from django.urls import reverse

@@ -1,4 +1,4 @@
-"""Feature 1 verification: equipment/category inventory CRUD through the UI."""
+"""Inventory CRUD, search and access-control tests."""
 
 from django.test import Client, TestCase
 from django.urls import reverse

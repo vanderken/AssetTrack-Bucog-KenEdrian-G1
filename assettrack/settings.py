@@ -6,8 +6,13 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-this-in-production")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "development-only-secret-key"
+    else:
+        raise RuntimeError("DJANGO_SECRET_KEY must be set when DEBUG is disabled.")
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
 INSTALLED_APPS = [
@@ -72,8 +77,15 @@ if "test" in sys.argv:
         }
     }
 
+# Django 5.1's BaseContext.__copy__ calls super().__copy__(), which fails on
+# Python 3.14 because the base object has no __dict__. The test client copies
+# every rendered context, so every page render needs this compatibility shim.
 from django.template import context as _dj_context
-_dj_context.BaseContext.__copy__ = lambda self: (setattr(d := object.__new__(self.__class__), "dicts", self.dicts[:]), d)[1]
+
+_dj_context.BaseContext.__copy__ = lambda self: (
+    setattr(copy := object.__new__(self.__class__), "dicts", self.dicts[:]),
+    copy,
+)[1]
 
 AUTH_USER_MODEL = "accounts.User"
 

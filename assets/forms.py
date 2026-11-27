@@ -259,7 +259,6 @@ class MaintenanceLogForm(forms.ModelForm):
 
     def __init__(self, *args, company=None, **kwargs):
         super().__init__(*args, **kwargs)
-        _bootstrapify(self.fields)
         device_qs = Device.objects.all().select_related("category")
         if company:
             device_qs = device_qs.filter(company=company)
