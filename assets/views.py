@@ -11,7 +11,8 @@ from accounts.decorators import role_required
 from accounts.models import User
 from .forms import (
     DeviceForm, CheckoutRequestForm, CategoryForm,
-    CheckoutAssignForm, MaintenanceLogForm, DepartmentForm, SystemSettingsForm,
+    CheckoutAssignForm, CheckoutReturnForm,
+    MaintenanceLogForm, DepartmentForm, SystemSettingsForm,
 )
 from .models import Device, Category, Checkout, Department, MaintenanceLog, SystemSettings
 
@@ -442,32 +443,37 @@ def checkout_return(request, pk):
 
     checkout = get_object_or_404(Checkout, pk=pk, company=admin_company, status=Checkout.STATUS_ACTIVE)
     if request.method == "POST":
-        condition = request.POST.get("return_condition", Checkout.CONDITION_GOOD)
-        condition_labels = dict(Checkout.CONDITION_CHOICES)
-        if condition not in condition_labels:
+        form = CheckoutReturnForm(request.POST)
+        if not form.is_valid():
             messages.error(request, "Please select a valid condition for the returned device.")
             return redirect("assets:active_checkouts")
 
-        checkout.status = Checkout.STATUS_RETURNED
-        checkout.returned_at = timezone.now()
-        checkout.return_condition = condition
-        checkout.save()
-        if checkout.device:
-            needs_repair = condition in (Checkout.CONDITION_DAMAGED, Checkout.CONDITION_NEEDS_REPAIR)
-            checkout.device.status = Device.STATUS_REPAIR if needs_repair else Device.STATUS_AVAILABLE
-            checkout.device.save()
-            status_note = "marked as Under Repair" if needs_repair else "now available"
-            messages.success(
-                request,
-                f"Device '{checkout.device.asset_tag}' returned in {condition_labels[condition].lower()} "
-                f"condition and is {status_note}.",
-            )
-        else:
-            messages.success(request, "Checkout marked as returned.")
+        condition = form.cleaned_data["return_condition"]
+        condition_labels = dict(Checkout.CONDITION_CHOICES)
+        with transaction.atomic():
+            checkout.status = Checkout.STATUS_RETURNED
+            checkout.returned_at = timezone.now()
+            checkout.return_condition = condition
+            checkout.save(update_fields=["status", "returned_at", "return_condition"])
+            if checkout.device:
+                needs_repair = condition in (Checkout.CONDITION_DAMAGED, Checkout.CONDITION_NEEDS_REPAIR)
+                device = Device.objects.select_for_update().get(pk=checkout.device_id)
+                device.status = Device.STATUS_REPAIR if needs_repair else Device.STATUS_AVAILABLE
+                device.save(update_fields=["status"])
+                status_note = "marked as Under Repair" if needs_repair else "now available"
+                messages.success(
+                    request,
+                    f"Device '{device.asset_tag}' returned in {condition_labels[condition].lower()} "
+                    f"condition and is {status_note}.",
+                )
+            else:
+                messages.success(request, "Checkout marked as returned.")
 
-    next_url = request.POST.get("next") or request.GET.get("next")
-    if next_url == "device_list":
-        return redirect("assets:device_list")
+        next_url = form.cleaned_data.get("next") or request.GET.get("next")
+        if next_url == "device_list":
+            return redirect("assets:device_list")
+        if next_url == "reports":
+            return redirect("assets:reports")
     return redirect("assets:active_checkouts")
 
 
@@ -582,6 +588,7 @@ def reports_view(request):
         "under_repair": sum(1 for d in devices if d.status == Device.STATUS_REPAIR),
         "active_checkouts": active_checkouts_qs.count(),
         "overdue": overdue_list,
+        "return_condition_choices": Checkout.CONDITION_CHOICES,
         "damaged": MaintenanceLog.objects.filter(device__company=admin_company, is_resolved=False).count(),
         "category_summary": category_summary,
         "devices": devices,

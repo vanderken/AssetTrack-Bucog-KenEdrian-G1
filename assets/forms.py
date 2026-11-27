@@ -230,6 +230,11 @@ class CheckoutAssignForm(forms.ModelForm):
         return due_date
 
 
+class CheckoutReturnForm(forms.Form):
+    return_condition = forms.ChoiceField(choices=Checkout.CONDITION_CHOICES)
+    next = forms.CharField(required=False)
+
+
 class MaintenanceLogForm(forms.ModelForm):
     class Meta:
         model = MaintenanceLog
