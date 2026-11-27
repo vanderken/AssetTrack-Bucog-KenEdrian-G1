@@ -161,6 +161,7 @@ class CheckoutRequestForm(forms.ModelForm):
 
     def __init__(self, *args, company=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.company = company
         _bootstrapify(self.fields)
         device_qs = Device.objects.filter(status=Device.STATUS_AVAILABLE).select_related("category")
         if company:
@@ -176,6 +177,11 @@ class CheckoutRequestForm(forms.ModelForm):
         req_name = (cleaned_data.get("requested_device_name") or "").strip()
         if not device and not req_name:
             raise forms.ValidationError("Please select an existing available device or enter the name of the new device you need.")
+        if device:
+            if device.status != Device.STATUS_AVAILABLE:
+                self.add_error("device", "That device is not available to request.")
+            if self.company is not None and device.company_id != self.company.pk:
+                self.add_error("device", "That device does not belong to your company.")
         if device and req_name:
             cleaned_data["requested_device_name"] = ""
             cleaned_data["requested_category"] = None
