@@ -109,6 +109,16 @@ class CompanyMembershipRequest(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(request_type__in=["join", "leave"]),
+                name="membership_request_type_valid",
+            ),
+            models.CheckConstraint(
+                condition=Q(status__in=["pending", "approved", "rejected"]),
+                name="membership_request_status_valid",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.request_type} - {self.status}"
