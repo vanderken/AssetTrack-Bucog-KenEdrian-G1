@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Delete Category - AssetTrack{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="mb-1 text-white fw-bold">Delete Category</h3>
+    <p class="text-secondary small mb-0">Used categories are protected from deletion.</p>
+  </div>
+  <a href="{% url 'assets:category_list' %}" class="btn btn-outline-light"><i class="bi bi-arrow-left me-1"></i> Back</a>
+</div>
+
+<div class="at-card p-4" style="max-width: 560px;">
+  <p class="text-light">Delete category <strong class="text-white">{{ category.name }}</strong>?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i> Delete</button>
+    <a href="{% url 'assets:category_list' %}" class="btn btn-outline-light">Cancel</a>
+  </form>
+</div>
+{% endblock %}
