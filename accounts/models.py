@@ -2,6 +2,7 @@ import secrets
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 
 
 def generate_company_code():
@@ -22,12 +23,19 @@ class Company(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Lower("code"), name="company_code_case_insensitive_unique"
+            ),
+        ]
+
     def __str__(self):
         return self.name
 
     def regenerate_code(self):
         new_code = generate_company_code()
-        while Company.objects.filter(code=new_code).exclude(pk=self.pk).exists():
+        while Company.objects.filter(code__iexact=new_code).exclude(pk=self.pk).exists():
             new_code = generate_company_code()
         self.code = new_code
         self.save(update_fields=["code", "updated_at"])

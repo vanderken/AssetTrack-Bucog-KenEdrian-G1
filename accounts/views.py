@@ -60,7 +60,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save(commit=False)
             user.email = form.cleaned_data["email"]
-            user.role = form.cleaned_data["role"]
+            user.role = User.ROLE_EMPLOYEE
             user.save()
             messages.success(request, "Account created successfully. You can now log in.")
             return redirect("accounts:login")
@@ -97,6 +97,7 @@ def admin_dashboard(request):
         "pending_requests": Checkout.objects.filter(company=company, status=Checkout.STATUS_PENDING).count() if company else 0,
         "overdue_checkouts": [c for c in Checkout.objects.filter(company=company, status=Checkout.STATUS_ACTIVE) if c.is_overdue] if company else [],
         "damaged_count": MaintenanceLog.objects.filter(device__company=company, is_resolved=False).count() if company else 0,
+        "return_condition_choices": Checkout.CONDITION_CHOICES,
         "settings": settings_obj,
     }
     return render(request, "accounts/admin_dashboard.html", context)

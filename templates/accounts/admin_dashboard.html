@@ -131,8 +131,14 @@
           <td class="text-light">{{ c.employee.get_full_name|default:c.employee.username }}</td>
           <td><span class="badge at-badge-overdue">{{ c.due_date }}</span></td>
           <td>
-            <form method="post" action="{% url 'assets:checkout_return' c.pk %}">
+            <form method="post" action="{% url 'assets:checkout_return' c.pk %}" class="d-flex align-items-center gap-1">
               {% csrf_token %}
+              <select name="return_condition" class="form-select form-select-sm" aria-label="Condition on return" required style="width:auto;">
+                <option value="" disabled selected>-- Condition --</option>
+                {% for value, label in return_condition_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
               <button class="btn btn-sm btn-outline-light">Mark Returned</button>
             </form>
           </td>

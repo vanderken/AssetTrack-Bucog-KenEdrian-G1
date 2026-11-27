@@ -1,4 +1,4 @@
-"""F-06 verification: return condition is required and validated end to end."""
+"""Return condition validation tests."""
 
 from datetime import timedelta
 
