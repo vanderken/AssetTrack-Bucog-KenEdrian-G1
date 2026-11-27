@@ -1,0 +1,196 @@
+/* AssetTrack skin for the custom admin site. Loaded after Django admin CSS. */
+
+body.at-admin {
+  background-color: var(--at-bg);
+  color: var(--at-text);
+}
+
+.at-admin-shell {
+  background: linear-gradient(180deg, #151d30 0%, #111727 100%);
+  border: 1px solid var(--at-border);
+}
+
+.at-admin-shell #content-main {
+  width: 100%;
+}
+
+.at-admin-shell .module,
+.at-admin-shell #changelist {
+  border: 0;
+  background: transparent;
+}
+
+.at-admin-shell .changelist-form-container {
+  overflow-x: auto;
+}
+
+.at-admin-shell a:link,
+.at-admin-shell a:visited {
+  color: var(--at-info);
+}
+
+.at-admin-shell table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.at-admin-shell thead th {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-bottom: 2px solid #2d3d63 !important;
+  color: #cbd5e1 !important;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  text-transform: uppercase;
+}
+
+.at-admin-shell tbody td,
+.at-admin-shell tbody th {
+  border-bottom: 1px solid #1c253d !important;
+  color: #f8fafc !important;
+  font-size: 0.93rem;
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+}
+
+.at-admin-shell tbody tr:hover td,
+.at-admin-shell tbody tr:hover th {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: #ffffff !important;
+}
+
+.at-admin-shell input[type="text"],
+.at-admin-shell input[type="password"],
+.at-admin-shell input[type="email"],
+.at-admin-shell input[type="number"],
+.at-admin-shell input[type="date"],
+.at-admin-shell input[type="time"],
+.at-admin-shell input[type="datetime-local"],
+.at-admin-shell textarea,
+.at-admin-shell select {
+  background-color: var(--at-surface-2) !important;
+  border: 1px solid var(--at-border) !important;
+  border-radius: 10px;
+  color: #ffffff !important;
+  font-size: 0.95rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.at-admin-shell input:focus,
+.at-admin-shell textarea:focus,
+.at-admin-shell select:focus {
+  border-color: var(--at-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25) !important;
+  outline: none;
+}
+
+.at-admin-shell input::placeholder,
+.at-admin-shell textarea::placeholder {
+  color: #64748b !important;
+}
+
+.at-admin-shell option {
+  background-color: #131b2e !important;
+  color: #ffffff !important;
+}
+
+.at-admin-shell .field-box label,
+.at-admin-shell .aligned label {
+  color: #e2e8f0 !important;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.at-admin-shell .help,
+.at-admin-shell .form-text,
+.at-admin-shell .paginator {
+  color: #94a3b8 !important;
+}
+
+.at-admin-shell .errornote,
+.at-admin-shell .errorlist {
+  background-color: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  border-radius: 10px;
+  color: #fecdd3 !important;
+  padding: 0.75rem 1rem;
+}
+
+.at-admin-shell .object-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+
+.at-admin-shell .object-tools a,
+.at-admin-shell .button,
+.at-admin-shell input[type="submit"],
+.at-admin-shell .submit-row input {
+  background: linear-gradient(135deg, var(--at-primary) 0%, var(--at-primary-2) 100%) !important;
+  border: 0 !important;
+  border-radius: 10px;
+  color: #ffffff !important;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  text-decoration: none;
+}
+
+.at-admin-shell .object-tools a:hover,
+.at-admin-shell .button:hover,
+.at-admin-shell input[type="submit"]:hover {
+  opacity: 0.94;
+  text-decoration: none;
+}
+
+.at-admin-shell .button.danger,
+.at-admin-shell .delete-button,
+.at-admin-shell .submit-row input[name="_delete"] {
+  background: var(--at-danger) !important;
+}
+
+.at-admin-shell .submit-row {
+  background: transparent;
+  border: 0;
+  padding: 1rem 0 0;
+}
+
+.at-admin-shell #changelist-filter {
+  background: transparent;
+}
+
+.at-admin-shell #changelist-filter h2,
+.at-admin-shell #changelist-filter h3 {
+  color: #ffffff !important;
+}
+
+.at-admin-shell .actions {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--at-border);
+  border-radius: 10px;
+  color: #cbd5e1;
+  padding: 0.6rem 0.85rem;
+}
+
+.auth-card #login-form input[type="text"],
+.auth-card #login-form input[type="password"] {
+  background-color: var(--at-surface-2);
+  border: 1px solid var(--at-border);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  padding: 0.65rem 0.85rem;
+  width: 100%;
+}
+
+.auth-card #login-form input:focus {
+  border-color: var(--at-primary);
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+  outline: none;
+}

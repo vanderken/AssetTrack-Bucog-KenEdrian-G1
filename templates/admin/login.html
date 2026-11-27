@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{% translate 'Log in' %} | AssetTrack{% endblock %}
+
+{% block guest_content %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="max-width:460px;">
+    <div class="text-center mb-4">
+      <span class="at-gradient rounded px-3 py-2 fw-bold fs-5">AT</span>
+      <h3 class="mt-3 mb-1 text-white fw-bold">AssetTrack Admin</h3>
+      <p class="text-secondary small">Sign in to manage AssetTrack records</p>
+    </div>
+
+    {% if form.errors and not form.non_field_errors %}
+      <div class="alert alert-danger py-2 small">
+        {% blocktranslate count counter=form.errors.items|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktranslate %}
+      </div>
+    {% endif %}
+    {% for error in form.non_field_errors %}
+      <div class="alert alert-danger py-2 small">{{ error }}</div>
+    {% endfor %}
+
+    {% if user.is_authenticated %}
+      <div class="alert alert-warning py-2 small">
+        {% blocktranslate trimmed %}You are authenticated as {{ username }}, but are not authorized to access this page.{% endblocktranslate %}
+      </div>
+    {% endif %}
+
+    <form action="{{ app_path }}" method="post" id="login-form">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label text-light fw-semibold" for="{{ form.username.id_for_label }}">{% translate 'Username' %}</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="mb-4">
+        <label class="form-label text-light fw-semibold" for="{{ form.password.id_for_label }}">{% translate 'Password' %}</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>{% endif %}
+        <input type="hidden" name="next" value="{{ next }}">
+      </div>
+      <button type="submit" class="btn btn-at-primary w-100">{% translate 'Log in' %}</button>
+    </form>
+
+    <div class="text-center mt-3 small">
+      <a href="{% url 'accounts:login' %}">Use the main AssetTrack login page</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

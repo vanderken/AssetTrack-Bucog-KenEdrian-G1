@@ -34,7 +34,9 @@ branches listed above supersede that wording. System settings is stored as a
 single row with `id = 1`. Its overdue threshold sets the default loan due date,
 and overdue reports flag active loans once that due date has passed. Django
 admin records are company-scoped, while the dedicated **System Settings** page
-is the supported configuration screen.
+is the supported configuration screen. `/admin/` opens the custom AssetTrack
+Administration console; it uses the same navigation, cards, tables and dark
+theme as the rest of the application rather than the stock Django admin skin.
 
 Accounts, roles, profiles and optional department management are implemented; departments are managed by IT Admins under **Departments** and can be assigned during registration, profile editing, or company member setup. Categories are managed under **Categories** with add, edit and protected deletion. Borrowing requests require an available company device or a new-model name, and record the purpose and request timestamp. Approval and direct assignment are transactional and reject any device that already has an active checkout. Returns require an explicit condition on both the active-loan and overdue-report screens, and the database rejects a returned checkout with a blank condition. Maintenance logs require a description, accept an optional photo up to 5 MB, and a device returns to service only after every open log is resolved.
 
