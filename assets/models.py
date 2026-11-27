@@ -258,6 +258,12 @@ class MaintenanceLog(models.Model):
 
     class Meta:
         ordering = ["-reported_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(is_resolved=False) | Q(resolved_at__isnull=False),
+                name="resolved_log_has_timestamp",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.device.asset_tag} log #{self.pk}"

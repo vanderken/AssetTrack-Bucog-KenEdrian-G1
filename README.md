@@ -28,7 +28,7 @@ increments.
 | 6 | Company membership join and leave requests | Working |
 | 7 | Admin-configurable self-checkout and overdue settings | Planned |
 
-Accounts, roles, profiles and optional department management are implemented; departments are managed by IT Admins under **Departments** and can be assigned during registration, profile editing, or company member setup. Categories are managed under **Categories** with add, edit and protected deletion. Borrowing requests require an available company device or a new-model name, and record the purpose and request timestamp. Approval and direct assignment are transactional and reject any device that already has an active checkout. Returns require an explicit condition on both the active-loan and overdue-report screens, and the database rejects a returned checkout with a blank condition.
+Accounts, roles, profiles and optional department management are implemented; departments are managed by IT Admins under **Departments** and can be assigned during registration, profile editing, or company member setup. Categories are managed under **Categories** with add, edit and protected deletion. Borrowing requests require an available company device or a new-model name, and record the purpose and request timestamp. Approval and direct assignment are transactional and reject any device that already has an active checkout. Returns require an explicit condition on both the active-loan and overdue-report screens, and the database rejects a returned checkout with a blank condition. Maintenance logs require a description, accept an optional photo up to 5 MB, and a device returns to service only after every open log is resolved.
 
 ## Core Feature — Equipment Borrowing Lifecycle (Vertical Slice)
 
